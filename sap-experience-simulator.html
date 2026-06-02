@@ -1,0 +1,67 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8" />
+  <title>SAP experience simulator</title>
+<style>
+#overlay {
+  visibility:hidden;
+  width:100%;
+  height:100%;
+  position:absolute;
+  top:0px;
+  left:0px;
+  background:black;
+  opacity:0.5;
+  text-align:center;
+  vertical-align:center;
+}
+#loading {
+  width:100px;
+  top:40%;
+  position:absolute;
+}
+</style>
+</head>
+<body>
+  <h2>SAP experience simulator</h2>
+  <h1>Type a message!</h1>
+  <textarea id="textarea" rows=20 cols=100 onkeypress="sigh()" ></textarea>
+  <br/>
+  <button id="release" onclick="release_all()" >Release all</button>
+  <button id="save" onclick="save()" >Save and close</button>
+  <div id="overlay">
+    <img id="loading" src="loading.gif" />
+  </div>
+</body>
+<script>
+var overlay = document.getElementById("overlay");
+var textarea = document.getElementById("textarea");
+var release = document.getElementById("release");
+var i = 0;
+
+function relief() {
+  overlay.style.visibility = "hidden";
+  textarea.disabled = false;
+}
+
+function sigh() {
+  overlay.style.visibility = "visible";
+  window.setTimeout(relief, 500 + ++i * 100);
+  window.setTimeout(sigh2, 1);
+}
+
+function sigh2() {
+  textarea.disabled = true;
+}
+
+function release_all() {
+  alert("Error: you must 'save and close' first!");
+}
+
+function save() {
+  alert("Error: you must 'release all' first!");
+}
+
+relief();
+
+</script>

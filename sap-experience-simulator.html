@@ -1,67 +1,581 @@
 <!doctype html>
 <head>
   <meta charset="utf-8" />
-  <title>SAP experience simulator</title>
-<style>
-#overlay {
-  visibility:hidden;
-  width:100%;
-  height:100%;
-  position:absolute;
-  top:0px;
-  left:0px;
-  background:black;
-  opacity:0.5;
-  text-align:center;
-  vertical-align:center;
-}
-#loading {
-  width:100px;
-  top:40%;
-  position:absolute;
-}
-</style>
+  <title>ZAP Experience Simulator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a0e1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 780px;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: -0.5px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .app-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #64748b;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    }
+
+    .card-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to right, #111827, #0f172a);
+    }
+
+    .card-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .status-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.2);
+    }
+
+    .card-body {
+      padding: 2rem;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #475569;
+      margin-bottom: 0.6rem;
+    }
+
+    textarea {
+      width: 100%;
+      background: #0a0e1a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-family: inherit;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      padding: 1rem 1.25rem;
+      resize: vertical;
+      min-height: 260px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+
+    textarea:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .card-footer {
+      padding: 1.25rem 2rem;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      background: #0f172a;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.55rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+
+    .btn-secondary:hover { background: #253347; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+    }
+
+    .btn-primary:hover { opacity: 0.9; }
+
+    /* Overlay */
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    #overlay.visible { display: flex; }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(99,102,241,0.2);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #64748b;
+      letter-spacing: 0.05em;
+    }
+
+    /* Error modal */
+    #modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #modal-backdrop.visible { display: flex; }
+
+    .modal {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      animation: modal-in 0.18s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .modal-message {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      line-height: 1.55;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-modal-ok {
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(239,68,68,0.25);
+      transition: opacity 0.15s;
+    }
+
+    .btn-modal-ok:hover { opacity: 0.9; }
+
+    /* FAB */
+    #fab {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(239,68,68,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
+      z-index: 50;
+      padding: 0;
+    }
+
+    #fab:hover {
+      transform: scale(1.12);
+      box-shadow: 0 12px 32px rgba(239,68,68,0.5);
+    }
+
+    #fab.active {
+      animation: fab-pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes fab-pulse {
+      0%, 100% { box-shadow: 0 8px 24px rgba(239,68,68,0.4); }
+      50%       { box-shadow: 0 8px 36px rgba(239,68,68,0.75); }
+    }
+
+    /* Toast stack */
+    #toast-stack {
+      position: fixed;
+      bottom: 6rem;
+      right: 2rem;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 0.6rem;
+      z-index: 60;
+      max-width: 320px;
+      width: calc(100vw - 4rem);
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      pointer-events: all;
+      animation: toast-in 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .toast.removing {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .toast-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .toast-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .toast-sender {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #f59e0b;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.2rem;
+    }
+
+    .toast-text {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+
+    .toast-close:hover { color: #94a3b8; }
+    .toast-close:active { transform: none; }
+  </style>
 </head>
 <body>
-  <h2>SAP experience simulator</h2>
-  <h1>Type a message!</h1>
-  <textarea id="textarea" rows=20 cols=100 onkeypress="sigh()" ></textarea>
-  <br/>
-  <button id="release" onclick="release_all()" >Release all</button>
-  <button id="save" onclick="save()" >Save and close</button>
-  <div id="overlay">
-    <img id="loading" src="loading.gif" />
+  <div class="app-shell">
+    <div class="app-header">
+      <div class="logo-mark">ZAP</div>
+      <span class="app-title">Enterprise Content Management Suite &mdash; v14.3.1</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Create Work Item</span>
+        <span class="status-badge">Connected</span>
+      </div>
+
+      <div class="card-body">
+        <label class="field-label" for="textarea">Description</label>
+        <textarea id="textarea" placeholder="Type your message here…" onkeypress="sigh()"></textarea>
+      </div>
+
+      <div class="card-footer">
+        <button id="release" class="btn-secondary" onclick="release_all()">Release All</button>
+        <button id="save" class="btn-primary" onclick="save()">Save &amp; Close</button>
+      </div>
+    </div>
   </div>
+
+  <button id="fab" onclick="toggleBot()" title="ZAP Helper Bot">&#x1F916;</button>
+  <div id="toast-stack"></div>
+
+  <div id="overlay">
+    <div class="spinner"></div>
+    <span class="spinner-label">Processing&hellip;</span>
+  </div>
+
+  <div id="modal-backdrop">
+    <div class="modal" role="alertdialog" aria-modal="true">
+      <div class="modal-icon">&#9888;&#xFE0E;</div>
+      <div>
+        <div class="modal-title" id="modal-title">Error</div>
+        <div class="modal-message" id="modal-message"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal-ok" onclick="closeModal()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var overlay  = document.getElementById("overlay");
+    var textarea = document.getElementById("textarea");
+    var modalBackdrop = document.getElementById("modal-backdrop");
+    var modalMessage  = document.getElementById("modal-message");
+
+    var i = 0;
+    var keyThreshold = randomThreshold();
+    var keyCount = 0;
+
+    function randomThreshold() {
+      return Math.floor(Math.random() * 8) + 3;
+    }
+
+    function relief() {
+      overlay.classList.remove("visible");
+      textarea.disabled = false;
+      textarea.focus();
+    }
+
+    function sigh() {
+      keyCount++;
+      if (keyCount < keyThreshold) return;
+      overlay.classList.add("visible");
+      window.setTimeout(relief, 500 + ++i * 100);
+      window.setTimeout(function() { textarea.disabled = true; }, 1);
+      keyThreshold = keyCount + randomThreshold();
+    }
+
+    function showModal(msg) {
+      modalMessage.textContent = msg;
+      modalBackdrop.classList.add("visible");
+    }
+
+    function closeModal() {
+      modalBackdrop.classList.remove("visible");
+      textarea.focus();
+    }
+
+    function release_all() {
+      showModal("Error: you must 'Save & Close' first!");
+    }
+
+    function save() {
+      showModal("Error: you must 'Release All' first!");
+    }
+
+    relief();
+
+    // Helper Bot
+    var fab        = document.getElementById("fab");
+    var toastStack = document.getElementById("toast-stack");
+    var botTimer   = null;
+
+    var BOT_GREETING = "Hi! I'm the ZAP Helper Bot. Let me know how I can help!";
+
+    var botMessages = [
+      "It looks like you're writing a work item. Need some tips?",
+      "Don't forget to Release All before saving!",
+      "Did you know ZAP supports over 14,000 enterprise integrations?",
+      "Tip: press any key to get started!",
+      "I noticed you've been typing for a while. Everything going okay?",
+      "Have you tried our AI-powered autocomplete? (Coming Q3 2027)",
+      "Your session will expire in 47 minutes.",
+      "Pro tip: ZAP is best experienced in Internet Explorer 11.",
+      "Would you like to take a quick survey? (1 of 47 questions)",
+      "New! ZAP now supports blockchain-backed audit trails. Ask me how!",
+      "Reminder: all work items must be approved by your line manager's manager.",
+      "It looks like you may be experiencing an error. Have you tried turning it off and on again?",
+      "ZAP is SOC 2 Type II compliant. Just so you know!",
+      "Fun fact: the average ZAP user saves 0.3 minutes per week.",
+      "Your password will expire in 2 days. Please contact IT.",
+      "Welcome back! You last logged in from an unrecognized device.",
+      "Upgrade to ZAP Enterprise Pro Max to unlock this feature.",
+      "I'm here to help! Just not with that.",
+      "Have a great day! Unless you're trying to save and close, in which case — good luck.",
+    ];
+
+    function randomBotMessage() {
+      return botMessages[Math.floor(Math.random() * botMessages.length)];
+    }
+
+    function addToast(msg) {
+      var text = msg !== undefined ? msg : randomBotMessage();
+      var toast = document.createElement("div");
+      toast.className = "toast";
+      toast.innerHTML =
+        '<div class="toast-avatar">&#x1F916;</div>' +
+        '<div class="toast-body">' +
+          '<div class="toast-sender">ZAP Helper Bot</div>' +
+          '<div class="toast-text">' + text + '</div>' +
+        '</div>' +
+        '<button class="toast-close" onclick="dismissToast(this.closest(\'.toast\'))">&#x2715;</button>';
+      toastStack.prepend(toast);
+
+      setTimeout(function() { dismissToast(toast); }, 9000 + Math.random() * 4000);
+    }
+
+    function dismissToast(toast) {
+      if (!toast || !toast.parentNode) return;
+      toast.classList.add("removing");
+      setTimeout(function() { toast.remove(); }, 320);
+    }
+
+    function scheduleNextToast() {
+      botTimer = setTimeout(function() {
+        if (!fab.classList.contains("active")) return;
+        addToast();
+        scheduleNextToast();
+      }, 2500 + Math.random() * 2500);
+    }
+
+    function startBot() {
+      if (fab.classList.contains("active")) return;
+      fab.classList.add("active");
+      addToast(BOT_GREETING);
+      scheduleNextToast();
+    }
+
+    function toggleBot() {
+      if (fab.classList.contains("active")) {
+        clearTimeout(botTimer);
+        botTimer = null;
+        fab.classList.remove("active");
+      } else {
+        startBot();
+      }
+    }
+
+    setTimeout(startBot, 3000);
+  </script>
 </body>
-<script>
-var overlay = document.getElementById("overlay");
-var textarea = document.getElementById("textarea");
-var release = document.getElementById("release");
-var i = 0;
-
-function relief() {
-  overlay.style.visibility = "hidden";
-  textarea.disabled = false;
-}
-
-function sigh() {
-  overlay.style.visibility = "visible";
-  window.setTimeout(relief, 500 + ++i * 100);
-  window.setTimeout(sigh2, 1);
-}
-
-function sigh2() {
-  textarea.disabled = true;
-}
-
-function release_all() {
-  alert("Error: you must 'save and close' first!");
-}
-
-function save() {
-  alert("Error: you must 'release all' first!");
-}
-
-relief();
-
-</script>
+</html>

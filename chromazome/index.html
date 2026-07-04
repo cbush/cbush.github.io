@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>chromazome</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #05060a;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #stage {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        cursor: pointer;
+      }
+      /* Debug utilities. Lives above the canvas; its own pointer events never
+         reach the canvas, so interacting here does not cycle the player. */
+      #debug {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        z-index: 10;
+        font: 11px ui-monospace, Menlo, Consolas, monospace;
+        color: #c9d2f0;
+        background: rgba(10, 12, 22, 0.82);
+        border: 1px solid rgba(120, 140, 200, 0.35);
+        border-radius: 6px;
+        padding: 6px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      #debug .debug-title {
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: #7f8ab5;
+        text-transform: uppercase;
+      }
+      #debug .debug-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      #debug input {
+        width: 44px;
+        font: inherit;
+        color: #e7ecff;
+        background: #05060a;
+        border: 1px solid rgba(120, 140, 200, 0.45);
+        border-radius: 4px;
+        padding: 2px 4px;
+      }
+      #debug button {
+        font: inherit;
+        color: #05060a;
+        background: #22e0ff;
+        border: 0;
+        border-radius: 4px;
+        padding: 2px 8px;
+        cursor: pointer;
+      }
+      #debug button:hover {
+        background: #6febff;
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-Dd_vwWwB.js"></script>
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <div id="debug">
+      <div class="debug-title">debug</div>
+      <label class="debug-row">
+        <span>start at level</span>
+        <input id="debug-level" type="number" min="1" value="1" />
+        <button id="debug-go">go</button>
+      </label>
+    </div>
+  </body>
+</html>

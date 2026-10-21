@@ -4,15 +4,62 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Off American Names</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-  body { font-family: monospace; margin: 2rem; }
-  li { margin: 0.25rem 0; font-size: 1.1rem; }
+  body {
+    margin: 0;
+    padding: 1.5rem;
+    background: #fff;
+    font-family: "Press Start 2P", monospace;
+  }
+  #panel {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #1010b0;
+    border-radius: 8px;
+    padding: 28px 32px;
+    box-sizing: border-box;
+  }
+  #names {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(12, auto);
+    grid-auto-flow: column;
+    column-gap: 24px;
+    row-gap: 8px;
+  }
+  #names li {
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+  #regen {
+    display: block;
+    margin: 1rem auto 0;
+    font-family: inherit;
+    font-size: 10px;
+    padding: 8px 12px;
+  }
+  @media (max-width: 520px) {
+    #panel { padding: 16px; }
+    #names li { font-size: 8px; }
+    #names { column-gap: 12px; }
+  }
 </style>
 </head>
 <body>
-<h1>Off American Names</h1>
+<div id="panel">
+  <ul id="names"></ul>
+</div>
 <button id="regen">Regenerate</button>
-<ul id="names"></ul>
 
 <script>
   const firstNames = [
@@ -141,7 +188,7 @@
 
   function render() {
     list.innerHTML = "";
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 24; i++) {
       const li = document.createElement("li");
       li.textContent = generateName();
       list.appendChild(li);

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Off American Names</title>
+<style>
+  body { font-family: monospace; margin: 2rem; }
+  li { margin: 0.25rem 0; font-size: 1.1rem; }
+</style>
+</head>
+<body>
+<h1>Off American Names</h1>
+<button id="regen">Regenerate</button>
+<ul id="names"></ul>
+
+<script>
+  const firstNames = [
+    "James","John","Robert","Michael","William","David","Richard","Joseph","Thomas","Charles",
+    "Chris","Daniel","Matthew","Anthony","Mark","Steve","Kevin","Brian","Jason","Scott",
+    "Jeff","Todd","Tim","Tony","Mike","Dave","Greg","Dennis","Gary","Larry",
+    "Randy","Rick","Jim","Bob","Mary","Jennifer","Linda","Susan","Karen","Lisa",
+    "Nancy","Sandra","Donna","Carol","Amy","Kelly","Heather","Tammy"
+  ];
+  const surnames = [
+    "Smith","Johnson","Williams","Brown","Jones","Miller","Davis","Wilson","Anderson","Taylor",
+    "Thomas","Moore","Martin","Jackson","Thompson","White","Harris","Clark","Lewis","Walker",
+    "Hall","Allen","Young","King","Wright","Scott","Green","Baker","Adams","Nelson",
+    "Hill","Campbell","Mitchell","Roberts","Carter","Phillips","Evans","Turner","Parker","Collins",
+    "Edwards","Stewart","Morris","Murphy","Cook","Rogers","Morgan","Cooper","Peterson","Reed",
+    "Bailey","Howard","Ward","Richardson","Watson","Brooks","Wood","Bennett","Gray","Hughes",
+    "Price","Sanders","Patterson","Long","Foster","Butler","Barnes","Fisher"
+  ];
+
+  // Phoneme pools as [spelling, weight]; weights are hand-estimated.
+  const onsets = [
+    ["s",14],["t",12],["b",9],["p",9],["d",9],["c",9],["m",8],["f",7],["h",7],
+    ["r",7],["l",7],["w",6],["n",5],["g",5],["k",4],["v",3],["j",2],["z",1],
+    ["st",5],["tr",4],["pr",4],["br",3],["cr",3],["dr",3],["fr",3],["gr",3],
+    ["pl",3],["bl",3],["cl",3],["fl",2],["gl",2],["sl",2],["sp",3],["sk",2],
+    ["sm",1],["sn",1],["sw",1],["ch",4],["sh",4],["th",4]
+  ];
+  const nuclei = [
+    ["e",20],["a",20],["i",18],["o",16],["u",10],
+    ["ea",4],["oo",4],["ee",3],["ai",3],["ou",3],["oa",2]
+  ];
+
+  const CONS = "bcdfghjklmnpqrstvwxz";
+  const isCons = c => CONS.includes(c);
+
+  function rand(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function pick(pairs) {
+    const total = pairs.reduce((sum, p) => sum + p[1], 0);
+    let r = Math.random() * total;
+    for (const [value, weight] of pairs) {
+      r -= weight;
+      if (r < 0) return value;
+    }
+    return pairs[pairs.length - 1][0];
+  }
+
+  function cap(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // Legal English consonant clusters by position in the word.
+  const validInitial = new Set(
+    onsets.map(o => o[0]).concat(["str","spr","spl","scr","thr","tw"])
+  );
+  const validFinal = new Set(
+    "bcdfgklmnprstxz".split("").concat([
+      "nd","nt","st","ng","nk","ck","mp","ch","th","sh","rt","rd","rk","ld","lt",
+      "rn","sk","sp","lk","lf","rm","lm","rs","ls","ns","ks","ds","ts","ms","ps",
+      "rds","nds","nts","rch","nch"
+    ])
+  );
+
+  // Is the consonant run containing index i legal for its position?
+  // Initial runs must be a valid onset, final runs a valid coda, and medial
+  // runs must split into a valid coda + valid onset (e.g. "nd|r", "t|t").
+  function runValid(w, i) {
+    let s = i, e = i + 1;
+    while (s > 0 && isCons(w[s - 1])) s--;
+    while (e < w.length && isCons(w[e])) e++;
+    const run = w.slice(s, e);
+    if (s === 0 && e === w.length) return true;
+    if (s === 0) return validInitial.has(run);
+    if (e === w.length) return validFinal.has(run);
+    if (run.length === 1) return true;
+    for (let k = 0; k < run.length; k++) {
+      const coda = run.slice(0, k), onset = run.slice(k);
+      if ((coda === "" || validFinal.has(coda)) && validInitial.has(onset)) return true;
+    }
+    return false;
+  }
+
+  // Replace one consonant with a different one (Steve -> Sleve), rejecting
+  // results whose affected consonant cluster is not legal in English.
+  function mutate(name) {
+    const w = name.toLowerCase();
+    const idxs = [];
+    for (let i = 0; i < w.length; i++) if (isCons(w[i])) idxs.push(i);
+    if (!idxs.length) return name;
+    for (let t = 0; t < 50; t++) {
+      const i = rand(idxs);
+      const rep = rand(CONS);
+      if (rep === w[i]) continue;
+      const out = w.slice(0, i) + rep + w.slice(i + 1);
+      if (runValid(out, i)) return cap(out);
+    }
+    return name;
+  }
+
+  // Surname endings as [spelling, weight].
+  const suffixes = [
+    ["ingle",3],["dorf",3],["alez",3],["son",4],["ford",3]
+  ];
+
+  // Phoneme-built surname: optional leading syllable + onset + suffix.
+  // Consonant-initial suffixes get a vowel inserted first.
+  function phoneticSurname() {
+    let s = "";
+    if (Math.random() < 0.4) s += pick(onsets) + pick(nuclei);
+    const suffix = pick(suffixes);
+    s += pick(onsets);
+    if (!"aeiou".includes(suffix[0])) s += pick(nuclei);
+    s += suffix;
+    return cap(s);
+  }
+
+  function generateName() {
+    const first = mutate(rand(firstNames));
+    const last = Math.random() < 0.6 ? mutate(rand(surnames)) : phoneticSurname();
+    return first + " " + last;
+  }
+
+  const list = document.getElementById("names");
+
+  function render() {
+    list.innerHTML = "";
+    for (let i = 0; i < 10; i++) {
+      const li = document.createElement("li");
+      li.textContent = generateName();
+      list.appendChild(li);
+    }
+  }
+
+  document.getElementById("regen").addEventListener("click", render);
+  render();
+</script>
+</body>
+</html>
